@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Citas CECyT 3</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container">
+            <span class="navbar-brand">🎓 Proyecto Aula - Gestor de Citas</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card p-3 mb-3">
+                    <h5>Nueva Cita</h5>
+                    <form id="formCita">
+                        <input type="text" id="cliente" class="form-control mb-2" placeholder="Cliente" required>
+                        <input type="email" id="email" class="form-control mb-2" placeholder="Email" required>
+                        <input type="tel" id="telefono" class="form-control mb-2" placeholder="Teléfono">
+                        <input type="datetime-local" id="fecha" class="form-control mb-2" required>
+                        <select id="servicio" class="form-select mb-3">
+                            <option>Reparación PC</option>
+                            <option>Instalación Redes</option>
+                            <option>Desarrollo Web</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary w-100">Guardar</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card p-3">
+                    <h5>Agenda</h5>
+                    <table class="table">
+                        <thead><tr><th>Cliente</th><th>Fecha</th><th>Acción</th></tr></thead>
+                        <tbody id="tablaCitas"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cargar = async () => {
+            const res = await fetch('/api/citas');
+            const data = await res.json();
+            document.getElementById('tablaCitas').innerHTML = data.map(c => `
+                <tr>
+                    <td>${c.cliente}<br><small>${c.servicio}</small></td>
+                    <td>${new Date(c.fecha).toLocaleString()}</td>
+                    <td>
+                        <button onclick="borrar(${c.id})" class="btn btn-sm btn-danger">X</button>
+                        <a href="/api/pdf/${c.id}" target="_blank" class="btn btn-sm btn-secondary">PDF</a>
+                    </td>
+                </tr>`).join('');
+        };
+
+        document.getElementById('formCita').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await fetch('/api/citas', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    cliente: document.getElementById('cliente').value,
+                    email: document.getElementById('email').value,
+                    telefono: document.getElementById('telefono').value,
+                    fecha: document.getElementById('fecha').value,
+                    servicio: document.getElementById('servicio').value
+                })
+            });
+            document.getElementById('formCita').reset();
+            cargar();
+        });
+
+        const borrar = async (id) => {
+            if(confirm('¿Borrar?')) {
+                await fetch(`/api/citas/${id}`, { method: 'DELETE' });
+                cargar();
+            }
+        };
+        cargar();
+    </script>
+</body>
+</html>
